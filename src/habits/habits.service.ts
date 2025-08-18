@@ -1,9 +1,9 @@
 import { Injectable } from "@nestjs/common/decorators/core/injectable.decorator";
-import { InMemHabitsRepository } from "./in-mem-habits-repository.ts.js";
+import { HabitsRepository } from "./habits-repository.js";
 
 @Injectable()
 export class HabitsService {
-  constructor(private readonly repository: InMemHabitsRepository) {}
+  constructor(private readonly repository: HabitsRepository) {}
 
   findAllHabits() {
     return this.repository.findAll();
@@ -11,5 +11,18 @@ export class HabitsService {
   
   createHabit(newHabitInput){
     return this.repository.createHabit(newHabitInput);
+  }
+
+  findOneHabit(id: string){
+    return this.repository.findOneHabit(id);
+  }
+
+   remove(id: number) {
+    return this.repository.removeHabit(id);
+  }
+
+
+  updateHabit(id: number, input: string){
+    return this.repository.updateHabit(id, input);
   }
 }
