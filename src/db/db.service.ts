@@ -1,32 +1,73 @@
 import { Injectable } from "@nestjs/common";
+import { randomUUID } from "crypto";
+import { StoreItemEntity } from "./model/store-item.entity";
+import { CreateEntityInput } from "./model/create-entity-input.type";
+import { UpdateEntityInput } from "./model/update-entity-input.type";
+import { FindAllQuery } from "./model/find-all-query.type";
+import { FindOneQuery } from "./model/find-one-query.type";
 
 @Injectable()
 export class DBService {
-  private store: Map<string, any> = new Map();
+  private store: Map<string, StoreItemEntity[]> = new Map();
   
-  create(entityName: string, input) {
-    this.getEntityByStoreName(entityName).push(input);
-    return input;
+  create<EntityModel extends StoreItemEntity>(
+    entityName: string,
+    input: CreateEntityInput<EntityModel>,
+  ): EntityModel {
+
+    const entityModel = {
+       ...input,
+      id: randomUUID()
+    } as EntityModel;
+
+    this.getEntityByStoreName<EntityModel>(entityName).push(entityModel);
+    return entityModel;
   }
 
-  findAll(entityName: string) {
-    return this.getEntityByStoreName(entityName);
+  findAll<EntityModel extends StoreItemEntity>(
+    entityName: string, 
+    query: FindAllQuery<EntityModel> = {},
+  ): EntityModel[] {
+    const {limit, sortBy} = query;
+    const results = this.getEntityByStoreName<EntityModel>(entityName);
+
+    if (sortBy) {
+      results.sort((a, b) => {
+        if (a[sortBy] < b[sortBy]) {
+          return -1;
+        }
+        if (a[sortBy] > b[sortBy]) {
+          return 1;
+        }
+        return 0;
+      });
+    }
+    if (limit) {
+      return results.slice(0, limit);
+    }
+    return results;
   }
 
-  findOneBy(entityName: string, filter: { [key: string]: any }) {
-    const entities = this.getEntityByStoreName(entityName)
+  findOneBy<EntityModel extends StoreItemEntity>(
+    entityName: string, 
+    query: FindOneQuery<EntityModel>
+  ): EntityModel | undefined {
+    const entities = this.getEntityByStoreName<EntityModel>(entityName)
     return entities.find((entity) => {
-       const isMatchingFilter = Object.keys(filter).every(
-        (key) => entity[key] === filter[key]
+       const isMatchingFilter = Object.keys(query).every(
+        (key) => entity[key] === query[key]
       );
       return isMatchingFilter;
     });
   }
 
-   deleteOneBy(entityName: string, filter: { [key: string]: any }) {
-    const entities = this.getEntityByStoreName(entityName);
+   deleteOneBy<EntityModel extends StoreItemEntity>(
+    entityName: string, 
+    query: FindOneQuery<EntityModel>
+  ): EntityModel | undefined {
+    const entities = this.getEntityByStoreName<EntityModel>(entityName);
     const entityIndex = entities.findIndex((entity) => {
-      return Object.keys(filter).every((key) => entity[key] === filter[key]);
+      return Object.keys(query).every((key) => entity[key] === query[key]);
     });
 
     if (entityIndex === -1) {
@@ -39,8 +80,12 @@ export class DBService {
   }
 
 
-  updateOneBy(entityName: string, filter: {[key: string]: any}, updatedInput: any) {
-    const entities = this.getEntityByStoreName(entityName);
+  updateOneBy<EntityModel extends StoreItemEntity>(
+    entityName: string, 
+    filter: {[key: string]: any}, 
+    updatedInput: UpdateEntityInput<EntityModel>)
+     {
+    const entities = this.getEntityByStoreName<EntityModel>(entityName);
     const entityIndex = entities.findIndex((entity) => {
       return Object.keys(filter).every((key) => entity[key] === filter[key]);
     });
@@ -54,11 +99,11 @@ export class DBService {
     return updatedEntity;
   }
 
-  private getEntityByStoreName(entityName: string){
+  private getEntityByStoreName<EntityModel extends StoreItemEntity> (entityName: string){
     if (!this.store.has(entityName)) {
       this.store.set(entityName, [])
     }
-    return this.store.get(entityName) as any[];
+    return this.store.get(entityName) as EntityModel[];
   }
 
 }
