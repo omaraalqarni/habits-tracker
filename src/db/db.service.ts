@@ -1,23 +1,30 @@
-import { Injectable } from "@nestjs/common";
-import { randomUUID } from "crypto";
-import { StoreItemEntity } from "./model/store-item.entity";
-import { CreateEntityInput } from "./model/create-entity-input.type";
-import { UpdateEntityInput } from "./model/update-entity-input.type";
-import { FindAllQuery } from "./model/find-all-query.type";
-import { FindOneQuery } from "./model/find-one-query.type";
+import { Inject, Injectable } from '@nestjs/common';
+import { randomUUID } from 'crypto';
+import { StoreItemEntity } from './model/store-item.entity';
+import { CreateEntityInput } from './model/create-entity-input.type';
+import { UpdateEntityInput } from './model/update-entity-input.type';
+import { FindAllQuery } from './model/find-all-query.type';
+import { FindOneQuery } from './model/find-one-query.type';
+import { SEED_DATA_TOKEN } from './model/constant';
 
 @Injectable()
 export class DBService {
   private store: Map<string, StoreItemEntity[]> = new Map();
-  
+
+  constructor(
+    @Inject(SEED_DATA_TOKEN)
+    private readonly seedData: Record<string, StoreItemEntity[]>,
+  ) {
+    this.store = new Map(Object.entries(this.seedData));
+  }
+
   create<EntityModel extends StoreItemEntity>(
     entityName: string,
     input: CreateEntityInput<EntityModel>,
   ): EntityModel {
-
     const entityModel = {
-       ...input,
-      id: randomUUID()
+      ...input,
+      id: randomUUID(),
     } as EntityModel;
 
     this.getEntityByStoreName<EntityModel>(entityName).push(entityModel);
@@ -25,10 +32,10 @@ export class DBService {
   }
 
   findAll<EntityModel extends StoreItemEntity>(
-    entityName: string, 
+    entityName: string,
     query: FindAllQuery<EntityModel> = {},
   ): EntityModel[] {
-    const {limit, sortBy} = query;
+    const { limit, sortBy } = query;
     const results = this.getEntityByStoreName<EntityModel>(entityName);
 
     if (sortBy) {
@@ -49,21 +56,21 @@ export class DBService {
   }
 
   findOneBy<EntityModel extends StoreItemEntity>(
-    entityName: string, 
-    query: FindOneQuery<EntityModel>
+    entityName: string,
+    query: FindOneQuery<EntityModel>,
   ): EntityModel | undefined {
-    const entities = this.getEntityByStoreName<EntityModel>(entityName)
+    const entities = this.getEntityByStoreName<EntityModel>(entityName);
     return entities.find((entity) => {
-       const isMatchingFilter = Object.keys(query).every(
-        (key) => entity[key] === query[key]
+      const isMatchingFilter = Object.keys(query).every(
+        (key) => entity[key] === query[key],
       );
       return isMatchingFilter;
     });
   }
 
-   deleteOneBy<EntityModel extends StoreItemEntity>(
-    entityName: string, 
-    query: FindOneQuery<EntityModel>
+  deleteOneBy<EntityModel extends StoreItemEntity>(
+    entityName: string,
+    query: FindOneQuery<EntityModel>,
   ): EntityModel | undefined {
     const entities = this.getEntityByStoreName<EntityModel>(entityName);
     const entityIndex = entities.findIndex((entity) => {
@@ -79,12 +86,11 @@ export class DBService {
     return deletedEntity;
   }
 
-
   updateOneBy<EntityModel extends StoreItemEntity>(
-    entityName: string, 
-    filter: {[key: string]: any}, 
-    updatedInput: UpdateEntityInput<EntityModel>)
-     {
+    entityName: string,
+    filter: { [key: string]: any },
+    updatedInput: UpdateEntityInput<EntityModel>,
+  ) {
     const entities = this.getEntityByStoreName<EntityModel>(entityName);
     const entityIndex = entities.findIndex((entity) => {
       return Object.keys(filter).every((key) => entity[key] === filter[key]);
@@ -99,11 +105,12 @@ export class DBService {
     return updatedEntity;
   }
 
-  private getEntityByStoreName<EntityModel extends StoreItemEntity> (entityName: string){
+  private getEntityByStoreName<EntityModel extends StoreItemEntity>(
+    entityName: string,
+  ) {
     if (!this.store.has(entityName)) {
-      this.store.set(entityName, [])
+      this.store.set(entityName, []);
     }
     return this.store.get(entityName) as EntityModel[];
   }
-
 }

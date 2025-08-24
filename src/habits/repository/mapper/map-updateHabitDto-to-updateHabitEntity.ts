@@ -1,13 +1,12 @@
-import { UpdateEntityInput } from "src/db/model/update-entity-input.type";
-import { UpdateHabitDto } from "src/habits/dto/update-habit.dto";
-import { HabitEntity } from "../entity/habit.entity";
+import { UpdateHabitInput } from '../../service/models/update-habit.input';
+import { UpdateEntityInput } from '../../../db/model/update-entity-input.type';
+import { HabitEntity } from '../entity/habit.entity';
 
-
-export const mapUpdateHabitDtoToUpdateEntityInput = (
-  updateHabitDto: UpdateHabitDto
+export const mapUpdateHabitModelToUpdateEntityInput = (
+  updateHabitInput: UpdateHabitInput,
 ): UpdateEntityInput<HabitEntity> => {
   return {
-    ...updateHabitDto,
-    updatedAt: new Date().getDate.toString()
+    ...updateHabitInput,
+    updatedAt: new Date().getDate().toString(),
   };
-}
+};

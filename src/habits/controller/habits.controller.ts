@@ -3,7 +3,6 @@ import {
   Controller,
   Delete,
   Get,
-  HttpCode,
   HttpException,
   HttpStatus,
   NotFoundException,
@@ -12,55 +11,69 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { HabitsService } from '../habits.service';
-import { CreateHabitDto } from '../dto/create-habit.dto';
-import { UpdateHabitDto } from '../dto/update-habit.dto';
-import { CreateHabitInput } from '../models/create-habit.input';
+import { HabitsService } from '../service/habits.service';
+import { CreateHabitDto } from './dto/create-habit.dto';
+import { UpdateHabitDto } from './dto/update-habit.dto';
+import { HabitsDTO } from './dto/habits.dto';
+import { mapHabitModelToHabitDto } from './mapper/map-habit-model-to-habit-dto';
+import { mapUpdateHabitModelToUpdateEntityInput } from '../repository/mapper/map-updateHabitDto-to-updateHabitEntity';
+import { mapCreateHabitInputToCreatEntityInput } from '../repository/mapper/map-createHabitModel-to-createEnitiyInput';
+import { UpdateHabitInput } from '../service/models/update-habit.input';
 
 @Controller('habits')
 export class HabitsController {
   constructor(private readonly habitService: HabitsService) {}
   @Get()
-  getAllHabits(
+  async findAllHabits(
     @Query('limit') limit: string,
     @Query('sort_by') sortBy: 'habitName' | 'id',
-  ) {
+  ): Promise<HabitsDTO[]> {
     const limitNumber = limit ? +limit : undefined;
-    return this.habitService.findAllHabits({ limit: limitNumber, sortBy });
+    const habits = await this.habitService.findAllHabits({
+      limit: limitNumber,
+      sortBy: sortBy,
+    });
+
+    return habits.map((habit) => mapHabitModelToHabitDto(habit)!);
   }
 
   @Get(':id')
-  getHabitById(@Param('id') id: string) {
-    const habit = this.habitService.findOneHabit(+id);
+  async getHabitById(@Param('id') id: string): Promise<HabitsDTO | undefined> {
+    const habit = await this.habitService.findOneHabit(+id);
     if (!habit) {
       throw new HttpException('habit not found', HttpStatus.NOT_FOUND);
     }
-    return habit;
+    return mapHabitModelToHabitDto(habit);
   }
 
   @Post()
-  createNewHabit(@Body() newHabit: CreateHabitDto): CreateHabitInput {
-    return this.habitService.createHabit(newHabit);
+  async createNewHabit(@Body() newHabit: CreateHabitDto): Promise<HabitsDTO> {
+    const habit = await this.habitService.createHabit(
+      mapCreateHabitInputToCreatEntityInput(newHabit),
+    );
+    return mapHabitModelToHabitDto(habit)!;
   }
+
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    const habit = this.habitService.remove(+id);
+  async remove(@Param('id') id: string): Promise<HabitsDTO | undefined> {
+    const habit = await this.habitService.remove(+id);
     if (!habit) {
       throw new NotFoundException(`Habit with id ${id} not found`);
     }
-
-    return habit;
+    return mapHabitModelToHabitDto(habit);
   }
   @Patch(':id')
-  update(
+  async update(
     @Param('id') id: string,
     @Body() input: UpdateHabitDto,
-  ): UpdateHabitInput {
-    const habit = this.habitService.updateHabit(+id, input);
+  ): Promise<HabitsDTO | undefined> {
+    const habit = await this.habitService.updateHabit(
+      mapUpdateHabitModelToUpdateEntityInput(input),
+    );
     if (!habit) {
       throw new NotFoundException(`Habit with id ${id} not found`);
     }
 
-    return habit;
+    return mapHabitModelToHabitDto(habit);
   }
 }

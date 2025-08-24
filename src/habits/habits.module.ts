@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { HabitsService } from './habits.service';
+import { HabitsService } from './service/habits.service';
 import { HabitsController } from './controller/habits.controller';
 import { HabitsRepository } from './repository/habits-repository';
 import { DBModule } from 'src/db/db.module';

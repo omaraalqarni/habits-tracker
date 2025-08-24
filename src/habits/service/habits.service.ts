@@ -1,10 +1,9 @@
 import { Injectable } from '@nestjs/common/decorators/core/injectable.decorator';
-import { HabitsRepository } from './repository/habits-repository.js';
-import { HabitsDTO } from './dto/habits.dto.js';
-import { UpdateHabitDto } from './dto/update-habit.dto.js';
+import { HabitsRepository } from '../repository/habits-repository';
+import { HabitsDTO } from '../controller/dto/habits.dto';
 import { HabitModel } from './models/habits.model';
 import { CreateHabitInput } from './models/create-habit.input';
-import { CreateHabitDto } from './dto/create-habit.dto';
+import { UpdateHabitInput } from './models/update-habit.input';
 
 @Injectable()
 export class HabitsService {
@@ -19,24 +18,25 @@ export class HabitsService {
     return this.repository.findAll({ limit, sortBy });
   }
 
-  createHabit(newHabitInput: CreateHabitDto): HabitsDTO | Promise<HabitsDTO> {
+  createHabit(
+    newHabitInput: CreateHabitInput,
+  ): HabitModel | Promise<HabitModel> {
     return this.repository.createHabit(newHabitInput);
   }
 
   findOneHabit(
     id: number,
-  ): HabitsDTO | Promise<HabitsDTO | undefined> | undefined {
+  ): HabitModel | undefined | Promise<HabitModel | undefined> {
     return this.repository.findHabitById(id);
   }
 
-  remove(id: number): HabitsDTO | undefined | Promise<HabitsDTO | undefined> {
+  remove(id: number): HabitModel | undefined | Promise<HabitModel | undefined> {
     return this.repository.removeHabit(id);
   }
 
   updateHabit(
-    id: number,
     input: UpdateHabitInput,
-  ): HabitsDTO | undefined | Promise<HabitsDTO | undefined> {
-    return this.repository.updateHabit(id, input);
+  ): HabitModel | undefined | Promise<HabitModel | undefined> {
+    return this.repository.updateHabit(input);
   }
 }
